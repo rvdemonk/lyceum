@@ -17,11 +17,13 @@ commitments live in `kernel/PRINCIPLES.md`, its evidence base in
 ## Anti-patterns
 
 - **Don't break the renderer–kernel coupling silently.** `assemble()` in
-  `src/main.rs` locates its splice points in `kernel/demo.html` by plain
-  string match — `<article>`, `</article>`, `<title>`, and the
-  `theme.css` `<link>`. Alter, remove, or duplicate any of those markers
-  and rendering breaks with no error raised. Editing the kernel means
-  checking what the renderer greps for.
+  `src/main.rs` locates its splice points by plain string match —
+  `<article>`, `</article>`, `<title>`, and the `theme.css` `<link>` —
+  in *both* shells it renders into: `kernel/demo.html` (writeups) and
+  `kernel/index-shell.html` (the home page). Alter, remove, or duplicate
+  any of those markers — even inside an HTML comment — and rendering
+  breaks with no error raised. Editing a shell means checking what the
+  renderer greps for.
 
 - **Don't add a principle without having seen the alternative fail.**
   Principles articulated from theory misfire in ways no one notices until

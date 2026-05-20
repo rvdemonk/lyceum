@@ -2,13 +2,27 @@
 Document Context:
   Created: 2026-05-20
   Source: Design discussion while iterating the lyceum home page (index.html)
-  Status: DRAFT PLAN
+  Status: LIVING — first build landed 2026-05-20
   Purpose: Fix what the lyceum home page is *for* before its dedicated chrome is built, so the build proceeds from purpose rather than drift.
 ---
 
 # The Lyceum Home Page
 
 The home page (`~/lyceum/index.html`) is at a turning point. It began as a writeup rendered through the monodoc shell, and is becoming something else. This doc fixes *what it is for* before that something-else is built. WIP — directions, not commitments.
+
+---
+
+## Built so far
+
+*Updated 2026-05-20 — a first pass landed the same day this doc was written.* The home page now renders through a **dedicated shell** (`kernel/index-shell.html`), no longer the monodoc writeup shell:
+
+- **The mark** — a lambda (`Λ`): the *L* of Lyceum and a colonnade's pediment, crisp at favicon size. An inline `data:` SVG favicon, and the mark at the rail head.
+- **A peripheral left rail** — the lyceum mark and wordmark stand present (the identity the dropped body-`<h1>` used to carry); a live index of the collections reveals on hover. Built from the catalogue's sections by script and scroll-spied. Styled as a library index — *not* the writeup TOC restyled, which is optimised for a single document.
+- **Pinned theme** — cool dark, so the home page carries no config panel. The catalogue room is lit a touch cooler than the warm-dark reading rooms.
+- **Sans throughout, no italics, no body `<h1>`** — instrument typography; identity lives in chrome.
+- **A re-entry affordance** — the last writeup opened from the home page keeps a bookmark ribbon in its margin until another is opened (`localStorage`, so it survives across visits).
+
+Still directions, not yet built: staged search, a cross-collection recency strip, `lyceum serve`.
 
 ---
 
@@ -46,7 +60,12 @@ Four functions:
 
 ## Open questions
 
-- Left rail vs top bar. (Leaning rail — it absorbs the TOC.)
-- Does the home page keep the monodoc shell at all, or get its own? Once chrome diverges this far, a dedicated shell may be cleaner than overriding.
-- Theme control on the home page — keep it, or pin the home page to one theme?
-- Whether the *relationships* between collections (not just a flat list of groups) ever become visible.
+Resolved in the first build (2026-05-20):
+
+- ~~Left rail vs top bar.~~ → A peripheral left rail, revealed on hover — but styled as a catalogue index, not the writeup TOC restyled.
+- ~~Keep the monodoc shell, or get its own?~~ → Its own (`kernel/index-shell.html`). Chrome diverged too far to override; a separate shell is cleaner than fighting the writeup shell, and safer given the renderer's string-match splice points.
+- ~~Theme control, or pin one theme?~~ → Pinned to cool dark. No config panel on the home page.
+
+Still open:
+
+- Whether the *relationships* between collections (not just a flat list of groups) ever become visible. Deferred — tags are the latent graph; don't draw it until the library is large enough to need it.

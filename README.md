@@ -42,6 +42,13 @@ each entry linking to its rendered HTML. Open it as a browser tab and
 leave it there; re-render any writeup (or run `lyceum index`) and refresh
 the tab to see the update.
 
+The home page is an *instrument*, not a writeup — a standing view of the
+library — so it has its own shell (`kernel/index-shell.html`): sans
+throughout, pinned to one theme, with a peripheral left rail carrying the
+lyceum mark and a live index of the collections. It also remembers the
+last writeup opened from it and marks that row on return. The design
+rationale is in `HOMEPAGE.md`.
+
 A *collection* is a writeup's intellectual family. It comes from the
 `collection` front-matter field; writeups sharing one are grouped
 together on the home page. A collection is deliberately **not** tied to
@@ -74,10 +81,11 @@ deleted are dropped from the home page automatically.
 
 The repository holds two halves:
 
-- **`kernel/`** — *monodoc*, the typographic system: the HTML shell
-  (`demo.html`), theme tokens (`theme.css`), and the design docs that
-  govern them (`PRINCIPLES.md`, `RESEARCH.md`). This is what a rendered
-  writeup *looks* like.
+- **`kernel/`** — *monodoc*, the typographic system: the writeup shell
+  (`demo.html`), the dedicated home-page shell (`index-shell.html`),
+  theme tokens (`theme.css`), and the design docs that govern them
+  (`PRINCIPLES.md`, `RESEARCH.md`). This is what a rendered writeup
+  *looks* like.
 - **The renderer** (`src/`) — the Rust that turns a writeup `.md` into a
   page built on that kernel.
 

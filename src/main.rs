@@ -54,6 +54,12 @@ fn default_shell() -> PathBuf {
     PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/kernel/demo.html"))
 }
 
+/// The home page has its own shell — it is an instrument, not a writeup,
+/// so it does not render into the monodoc document shell.
+fn default_index_shell() -> PathBuf {
+    PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/kernel/index-shell.html"))
+}
+
 fn main() -> ExitCode {
     let cli = Cli::parse();
     let result = match cli.command {
@@ -64,7 +70,7 @@ fn main() -> ExitCode {
                 .map(|()| format!("rendered {} -> {}", input.display(), output.display()))
         }
         Command::Index { shell } => {
-            let shell = shell.unwrap_or_else(default_shell);
+            let shell = shell.unwrap_or_else(default_index_shell);
             run_index(&shell).map(|p| format!("index -> {p}"))
         }
     };
@@ -107,10 +113,11 @@ fn run_render(input: &Path, output: &Path, shell: &Path) -> Result<(), String> {
     fs::write(output, html).map_err(|e| format!("writing {}: {e}", output.display()))?;
 
     // Record the render and refresh the home page. Best-effort: a registry
-    // problem must not fail an otherwise-successful render.
+    // problem must not fail an otherwise-successful render. The index is
+    // regenerated into its own shell, independent of the writeup's.
     if let Err(e) = register(input, output, &doc) {
         eprintln!("lyceum: warning: registry not updated: {e}");
-    } else if let Err(e) = regenerate_index(&shell_html, theme_css.as_deref()) {
+    } else if let Err(e) = regenerate_index(&default_index_shell()) {
         eprintln!("lyceum: warning: index not refreshed: {e}");
     }
     Ok(())
@@ -130,14 +137,15 @@ fn register(input: &Path, output: &Path, doc: &render::Document) -> Result<(), S
     registry::upsert(entry)
 }
 
-fn run_index(shell: &Path) -> Result<String, String> {
-    let (shell_html, theme_css) = load_shell(shell)?;
-    regenerate_index(&shell_html, theme_css.as_deref())?;
+fn run_index(index_shell: &Path) -> Result<String, String> {
+    regenerate_index(index_shell)?;
     Ok(registry::index_path().display().to_string())
 }
 
-/// Rebuild `~/lyceum/index.html` from the registry.
-fn regenerate_index(shell_html: &str, theme_css: Option<&str>) -> Result<(), String> {
+/// Rebuild `~/lyceum/index.html` from the registry, into the index shell.
+fn regenerate_index(index_shell: &Path) -> Result<(), String> {
+    let (shell_html, theme_css) = load_shell(index_shell)?;
+
     let mut entries = registry::load()?;
 
     // Self-heal: drop entries whose source .md has been deleted, so the
@@ -148,8 +156,8 @@ fn regenerate_index(shell_html: &str, theme_css: Option<&str>) -> Result<(), Str
         registry::save(&entries)?;
     }
 
-    let (article, css) = index::build(&entries);
-    let html = assemble(shell_html, theme_css, "Lyceum", &article, Some(&css))?;
+    let article = index::build(&entries);
+    let html = assemble(&shell_html, theme_css.as_deref(), "Lyceum", &article, None)?;
 
     let dir = registry::home_dir();
     fs::create_dir_all(&dir).map_err(|e| format!("creating {}: {e}", dir.display()))?;

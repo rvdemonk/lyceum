@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en" class="theme-cooldark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lyceum</title>
+
+  <!-- Lambda favicon: the L of Lyceum, and a colonnade's pediment.
+       An inline data: SVG — the page stays self-contained, no server.
+       Drawn as one stroked path so it survives 16px. -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Cpath%20d='M6,26L16,7L26,26'%20fill='none'%20stroke='%238aa0bc'%20stroke-width='3.6'%20stroke-linecap='round'%20stroke-linejoin='round'/%3E%3C/svg%3E">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <!-- The renderer inlines theme.css in place of the link tag below
+       (assemble() in src/main.rs matches it as a plain string). The
+       home page is pinned to one theme, so it carries no config panel. -->
+  <link rel="stylesheet" href="./theme.css">
+
+  <style>
+
+    /* ============================================================
+       LYCEUM HOME PAGE — dedicated shell.
+
+       Not a writeup shell. The home page is an *instrument*: it
+       surveys the whole library, so it speaks sans, holds a fixed
+       px scale (monodoc Principle 1), and carries present chrome —
+       a peripheral rail — that no writeup ever would.
+
+       Pinned to cool dark: a catalogue room lit a touch cooler than
+       the warm-dark reading rooms. No config panel, no italics.
+    ============================================================ */
+
+    :root {
+      --sans: 'Source Sans 3', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --mono: ui-monospace, 'JetBrains Mono', Menlo, monospace;
+      --rail-w: 264px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+      scroll-behavior: smooth;
+    }
+
+    /* No reactive cursor (monodoc Principle 4): hover speaks in tone,
+       not in a pointer flicker. */
+    a, nav { cursor: default; }
+
+    body {
+      min-height: 100vh;
+      padding-left: var(--rail-w);
+    }
+
+
+    /* ------------------------------------------------------------
+       THE RAIL
+       Peripheral chrome (Principle 2): collapsed at rest — a mark
+       and a column of dots — materialised on reach. The mark and
+       wordmark stay present; they are the page's only identity,
+       standing in for the writeup-<h1> this page deliberately drops.
+       Labels reveal via opacity + transform, never a layout-driven
+       reveal (Principle 6). It is not the writeup TOC restyled —
+       that one indexes a single document; this one indexes a library.
+    ------------------------------------------------------------ */
+
+    #rail {
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      width: var(--rail-w);
+      padding: 40px 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 34px;
+      z-index: 50;
+    }
+
+    .mark {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--accent);
+    }
+    .mark-glyph { flex-shrink: 0; display: block; }
+    .wordmark {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+    }
+
+    #rail-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 13px;
+    }
+
+    .rail-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: inherit;
+    }
+    .rail-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--text-faint);
+      flex-shrink: 0;
+      transition: background 0.2s ease;
+    }
+    .rail-label {
+      font-size: 13px;
+      letter-spacing: 0.01em;
+      color: var(--text-faint);
+      white-space: nowrap;
+      opacity: 0;
+      transform: translateX(-6px);
+      transition: opacity 0.22s ease, transform 0.22s ease, color 0.15s ease;
+    }
+    #rail:hover .rail-label { opacity: 1; transform: translateX(0); }
+    .rail-link:hover  .rail-dot   { background: var(--text-muted); }
+    .rail-link:hover  .rail-label { color: var(--text-muted); }
+    .rail-link.active .rail-dot   { background: var(--accent); }
+    .rail-link.active .rail-label { color: var(--text); }
+
+
+    /* ------------------------------------------------------------
+       THE CATALOGUE
+       A wide scanning surface, not a 55%-measure reading column.
+       Hierarchy is carried by tone alone — never size or slant
+       (Principles 3, 10): no italics anywhere on this page.
+    ------------------------------------------------------------ */
+
+    /* Left-anchored, not centred: the catalogue is tethered to the
+       rail — a card drawer and its cards, one instrument — rather
+       than floating in the middle of the viewport. Surplus width
+       falls to the right. */
+    article {
+      max-width: 1180px;
+      margin: 0;
+      padding: 90px 72px 150px;
+    }
+
+    .count {
+      font-size: 13px;
+      letter-spacing: 0.03em;
+      color: var(--text-faint);
+      margin-bottom: 54px;
+    }
+
+    .empty { font-size: 15px; color: var(--text-muted); }
+    .empty code {
+      font-family: var(--mono);
+      font-size: 0.9em;
+      color: var(--code-text);
+    }
+
+    section.collection { scroll-margin-top: 44px; }
+    section.collection + section.collection { margin-top: 42px; }
+
+    section.collection h2 {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: var(--text-head);
+      padding-top: 20px;
+      margin-bottom: 12px;
+      border-top: 1px solid var(--text-faint);
+    }
+    section.collection:first-child h2 { padding-top: 0; border-top: none; }
+
+    /* One writeup = one row. Identical column tracks down the page
+       keep the columns aligned; every field is 14px, so the tone
+       ladder (text / muted / faint) does all the ranking. */
+    a.row {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 260px) minmax(0, 1fr) minmax(0, 200px) 76px;
+      gap: 28px;
+      align-items: baseline;
+      padding: 8px 0;
+      font-size: 14px;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .col-title { color: var(--text);       transition: color 0.15s ease; }
+    .col-sub   { color: var(--text-muted); transition: color 0.15s ease; }
+    .col-tags  { color: var(--text-faint); transition: color 0.15s ease; }
+    .col-date  {
+      color: var(--text-faint);
+      text-align: right;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+      transition: color 0.15s ease;
+    }
+
+    a.row:hover .col-title { color: var(--text-head); }
+    a.row:hover .col-sub   { color: var(--text); }
+    a.row:hover .col-tags,
+    a.row:hover .col-date  { color: var(--text-muted); }
+
+    /* "You were here" — the last writeup opened from this page keeps
+       a bookmark ribbon in the margin until another is opened. A
+       bookmark is a physical object, so this one affordance is
+       allowed its geometry; localStorage carries it across re-entry. */
+    a.row.visited::before {
+      content: "";
+      position: absolute;
+      left: -20px;
+      top: 7px; bottom: 7px;
+      width: 2px;
+      border-radius: 1px;
+      background: var(--accent);
+    }
+    a.row.visited .col-title { color: var(--text-head); }
+
+
+    /* ------------------------------------------------------------
+       PHONE — no hover, so no peripheral reveal (Principle 2).
+       The rail folds to a static top bar; collections are reached
+       by scrolling. Rows stack.
+    ------------------------------------------------------------ */
+    @media (max-width: 820px) {
+      body { padding-left: 0; }
+
+      #rail {
+        position: static;
+        width: auto;
+        flex-direction: row;
+        align-items: center;
+        gap: 11px;
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--text-faint);
+      }
+      #rail-list { display: none; }
+
+      article { padding: 38px 24px 110px; }
+
+      a.row {
+        grid-template-columns: 1fr;
+        gap: 3px;
+        padding: 13px 0;
+      }
+      .col-date { text-align: left; }
+      a.row.visited::before { left: -14px; }
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- THE RAIL. The lambda mark and wordmark are always present —
+       identity; the collection list is filled by the script below
+       from the catalogue's sections. -->
+  <nav id="rail" aria-label="Collections">
+    <div class="mark">
+      <svg class="mark-glyph" viewBox="0 0 32 32" width="21" height="21" aria-hidden="true">
+        <path d="M6 26 L16 7 L26 26" fill="none" stroke="currentColor"
+              stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="wordmark">lyceum</span>
+    </div>
+    <ul id="rail-list"></ul>
+  </nav>
+
+  <!-- The catalogue. The renderer replaces the empty article element
+       below with the generated index (src/index.rs). Keep that
+       element's tags intact and unique — assemble() in src/main.rs
+       locates them by plain string match. -->
+  <article></article>
+
+  <script>
+    (function () {
+      "use strict";
+
+      /* Build the rail from the catalogue's collections, and keep the
+         active one lit as the page scrolls. The rail is JS-built so the
+         shell stays static and the renderer only ever swaps the
+         article — no extra splice point to keep in sync. */
+      var sections = [].slice.call(document.querySelectorAll("section.collection"));
+      var list = document.getElementById("rail-list");
+
+      if (list && sections.length) {
+        var links = {};
+        sections.forEach(function (sec) {
+          var h2 = sec.querySelector("h2");
+          var li = document.createElement("li");
+          var a = document.createElement("a");
+          a.className = "rail-link";
+          a.href = "#" + sec.id;
+          a.innerHTML =
+            '<span class="rail-dot"></span><span class="rail-label"></span>';
+          a.querySelector(".rail-label").textContent =
+            h2 ? h2.textContent : sec.id;
+          li.appendChild(a);
+          list.appendChild(li);
+          links[sec.id] = a;
+        });
+
+        var spy = new IntersectionObserver(
+          function (entries) {
+            entries.forEach(function (e) {
+              var a = links[e.target.id];
+              if (a) a.classList.toggle("active", e.isIntersecting);
+            });
+          },
+          { rootMargin: "-12% 0px -80% 0px" }
+        );
+        sections.forEach(function (s) { spy.observe(s); });
+      }
+
+      /* "You were here": remember the last writeup opened from this
+         page and mark its row on return. Wrapped — private-mode
+         browsers can throw on localStorage access. */
+      var KEY = "lyceum:last-opened";
+      var last = null;
+      try { last = localStorage.getItem(KEY); } catch (e) {}
+
+      [].forEach.call(document.querySelectorAll("a.row"), function (row) {
+        var id = row.getAttribute("data-id");
+        if (last && id === last) row.classList.add("visited");
+        row.addEventListener("click", function () {
+          try { localStorage.setItem(KEY, id); } catch (e) {}
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

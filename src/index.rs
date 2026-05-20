@@ -1,16 +1,17 @@
 //! The lyceum home page.
 //!
-//! A single index of every writeup, generated from the registry. Writeups
-//! are grouped into collections: an explicit `collection` front-matter
-//! field when the author set one, otherwise the writeup's source directory
-//! name as a fallback. A collection is an intellectual family — it need not
-//! match where the files sit on disk (two projects in different directories
-//! can share a collection, and often should).
+//! A single index of every writeup, generated from the registry and
+//! rendered into the dedicated index shell (`kernel/index-shell.html`).
+//! Writeups are grouped into collections: an explicit `collection`
+//! front-matter field when the author set one, otherwise the writeup's
+//! source directory name as a fallback. A collection is an intellectual
+//! family — it need not match where the files sit on disk (two projects
+//! in different directories can share a collection, and often should).
 //!
-//! The index is a *catalogue*, not a reading surface. It deliberately
-//! breaks monodoc's 55% prose measure and lays each writeup out as a wide
-//! row — title, description, tags, date in aligned columns — for a
-//! higher-bandwidth scan.
+//! The index is a *catalogue*, not a reading surface: a wide scanning
+//! surface laid out in aligned columns. `build` returns only the article
+//! HTML — all presentation (the rail, the columns, the pinned theme)
+//! lives in the index shell.
 //!
 //! Open `~/lyceum/index.html` as a browser tab; re-render any writeup (or
 //! run `lyceum index`) to refresh it.
@@ -19,34 +20,37 @@ use crate::registry::Entry;
 use crate::render::html_escape;
 use std::path::Path;
 
-/// Build the index page: returns (article-html, index-specific CSS).
-pub fn build(entries: &[Entry]) -> (String, String) {
+/// Build the index article: a count line and one `<section>` per
+/// collection. The shell's script builds the rail from these sections.
+pub fn build(entries: &[Entry]) -> String {
     let groups = grouped(entries);
 
-    let mut article = String::new();
-    article.push_str("  <h1>Lyceum</h1>\n");
-    article.push_str(&format!(
-        "  <p class=\"subtitle\">{}</p>\n\n",
+    let mut a = String::new();
+    a.push_str(&format!(
+        "  <p class=\"count\">{}</p>\n",
         summary(entries, &groups)
     ));
 
     if groups.is_empty() {
-        article
-            .push_str("  <p>No writeups yet. Render one with <code>lyceum render</code>.</p>\n");
-    } else {
-        // Collection headings are real <h2>s so the margin table-of-contents
-        // lists the collections for free.
-        article.push_str("  <div class=\"lyceum-index\">\n");
-        for (name, items) in &groups {
-            article.push_str(&format!("    <h2>{}</h2>\n", html_escape(name)));
-            for e in items {
-                article.push_str(&entry_html(e));
-            }
-        }
-        article.push_str("  </div>\n");
+        a.push_str(
+            "  <p class=\"empty\">No writeups yet. \
+             Render one with <code>lyceum render</code>.</p>\n",
+        );
+        return a;
     }
 
-    (article, INDEX_CSS.to_string())
+    for (name, items) in &groups {
+        a.push_str(&format!(
+            "  <section class=\"collection\" id=\"col-{}\">\n",
+            slug(name)
+        ));
+        a.push_str(&format!("    <h2>{}</h2>\n", html_escape(name)));
+        for e in items {
+            a.push_str(&entry_html(e));
+        }
+        a.push_str("  </section>\n");
+    }
+    a
 }
 
 /// The `created` date as a sortable key (a missing date sorts last).
@@ -54,8 +58,8 @@ fn ckey(e: &Entry) -> &str {
     e.created.as_deref().unwrap_or("")
 }
 
-/// The collection an entry belongs to: the explicit front-matter field, or
-/// the source directory name as a fallback.
+/// The collection an entry belongs to: the explicit front-matter field,
+/// or the source directory name as a fallback.
 fn collection_of(e: &Entry) -> String {
     if let Some(c) = e.collection.as_deref() {
         if !c.is_empty() {
@@ -67,6 +71,23 @@ fn collection_of(e: &Entry) -> String {
         .and_then(|p| p.file_name())
         .map(|n| n.to_string_lossy().into_owned())
         .unwrap_or_else(|| "Uncategorised".to_string())
+}
+
+/// A collection name reduced to an HTML-id-safe slug, for the rail
+/// anchor: runs of non-alphanumerics collapse to a single dash.
+fn slug(name: &str) -> String {
+    let mut s = String::new();
+    let mut prev_dash = false;
+    for c in name.chars() {
+        if c.is_ascii_alphanumeric() {
+            s.push(c.to_ascii_lowercase());
+            prev_dash = false;
+        } else if !prev_dash {
+            s.push('-');
+            prev_dash = true;
+        }
+    }
+    s.trim_matches('-').to_string()
 }
 
 /// Group entries by collection. Within a group: newest first. Groups
@@ -102,9 +123,11 @@ fn summary(entries: &[Entry], groups: &[(String, Vec<&Entry>)]) -> String {
     }
 }
 
-/// One writeup as a table row: an <a> grid of title | description | tags |
-/// date. Every column span is emitted even when empty, so the columns stay
-/// aligned down the collection.
+/// One writeup as a catalogue row: an `<a>` grid of
+/// title | description | tags | date. Every column span is emitted even
+/// when empty, so the columns stay aligned down the collection.
+/// `data-id` is the stable key the shell's "you were here" ribbon
+/// remembers in localStorage.
 fn entry_html(e: &Entry) -> String {
     let date = e.created.as_deref().unwrap_or("");
     let sub = e.subtitle.as_deref().unwrap_or("");
@@ -112,23 +135,24 @@ fn entry_html(e: &Entry) -> String {
 
     let mut s = String::new();
     s.push_str(&format!(
-        "    <a class=\"lyceum-row\" href=\"{}\">\n",
+        "    <a class=\"row\" href=\"{}\" data-id=\"{}\">\n",
         html_escape(&file_url(&e.output)),
+        html_escape(&e.output),
     ));
     s.push_str(&format!(
-        "      <span class=\"lyceum-col-title\">{}</span>\n",
+        "      <span class=\"col-title\">{}</span>\n",
         html_escape(&e.title),
     ));
     s.push_str(&format!(
-        "      <span class=\"lyceum-col-sub\">{}</span>\n",
+        "      <span class=\"col-sub\">{}</span>\n",
         html_escape(sub),
     ));
     s.push_str(&format!(
-        "      <span class=\"lyceum-col-tags\">{}</span>\n",
+        "      <span class=\"col-tags\">{}</span>\n",
         html_escape(&tags),
     ));
     s.push_str(&format!(
-        "      <span class=\"lyceum-col-date\">{}</span>\n",
+        "      <span class=\"col-date\">{}</span>\n",
         html_escape(date),
     ));
     s.push_str("    </a>\n");
@@ -145,78 +169,3 @@ fn file_url(path: &str) -> String {
         encoded
     }
 }
-
-/// Index-specific styling, injected into the generated page only — it does
-/// not belong in the monodoc shell, which renders writeups, not catalogues.
-const INDEX_CSS: &str = "
-    /* lyceum index — generated home page.
-       A catalogue, not a reading surface: it breaks the 55% prose
-       measure and lays each writeup out as a wide row for scanning.
-       No italics anywhere — on a non-prose surface a slant is just
-       decoration; italics are reserved for emphasis within prose. */
-
-    .lyceum-index { width: auto; }
-
-    /* The page subtitle (\"N writeups\") is a count, not prose — upright. */
-    p.subtitle { font-style: normal; }
-
-    /* Collection headings reuse monodoc's <h2> so the margin
-       table-of-contents lists the collections for free. The section
-       rule sits ABOVE the heading: a rule beneath it would bind the
-       heading visually to the section that precedes it. */
-    .lyceum-index h2 {
-      width: auto;
-      font-style: normal;
-      margin-top: 2.6rem;
-      margin-bottom: 0.55rem;
-      padding-top: 0.6rem;
-      border-top: 1px solid var(--text-faint);
-    }
-    .lyceum-index h2:first-child { margin-top: 1.6rem; }
-
-    /* Each writeup is a row: title | description | tags | date.
-       Identical column tracks on every row line the columns up down
-       the page. Every field is the same size — hierarchy is carried
-       by tone alone, never by size or slant. */
-    .lyceum-row {
-      display: grid;
-      grid-template-columns: minmax(0, 17rem) minmax(0, 1fr) minmax(0, 14rem) 5.5rem;
-      gap: 1.5rem;
-      align-items: baseline;
-      padding: 0.4rem 0;
-      font-size: 0.95rem;
-      text-decoration: none;
-      color: inherit;
-    }
-
-    .lyceum-col-title { color: var(--text); transition: color 0.15s ease; }
-    .lyceum-col-sub   { color: var(--text-muted); transition: color 0.15s ease; }
-    .lyceum-col-tags,
-    .lyceum-col-date {
-      font-family: var(--sans);
-      color: var(--text-faint);
-      transition: color 0.15s ease;
-    }
-    .lyceum-col-date {
-      text-align: right;
-      white-space: nowrap;
-    }
-
-    /* Hover lifts the whole row one tone-rung — a coordinated change
-       across all four columns, no background or border (monodoc
-       Principle 3: state lives in tone, not geometry). */
-    .lyceum-row:hover .lyceum-col-title { color: var(--text-head); }
-    .lyceum-row:hover .lyceum-col-sub  { color: var(--text); }
-    .lyceum-row:hover .lyceum-col-tags,
-    .lyceum-row:hover .lyceum-col-date { color: var(--text-muted); }
-
-    /* Phone: no room for columns — stack the row. */
-    @media (max-width: 800px) {
-      .lyceum-row {
-        grid-template-columns: 1fr;
-        gap: 0.1rem;
-        padding: 0.55rem 0;
-      }
-      .lyceum-col-date { text-align: left; }
-    }
-";

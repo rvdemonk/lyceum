@@ -4,7 +4,7 @@
 //! (vanilla Markdown + YAML front-matter + HTML escape hatches) is rendered
 //! to a self-contained monodoc HTML page; every render is recorded in a
 //! central registry from which `~/lyceum/index.html` is regenerated. The
-//! rest of the wiki layer is not built yet — see ~/tools/monodoc/LYCEUM.md.
+//! rest of the wiki layer is not built yet — see LYCEUM.md at the repo root.
 
 mod frontmatter;
 mod index;
@@ -34,7 +34,7 @@ enum Command {
         #[arg(short, long)]
         output: Option<PathBuf>,
         /// monodoc HTML shell to render into.
-        /// Defaults to ~/tools/monodoc/demo.html.
+        /// Defaults to the bundled kernel/demo.html.
         #[arg(long)]
         shell: Option<PathBuf>,
     },
@@ -48,8 +48,10 @@ enum Command {
 }
 
 fn default_shell() -> PathBuf {
-    let home = std::env::var("HOME").unwrap_or_else(|_| ".".into());
-    PathBuf::from(home).join("tools/monodoc/demo.html")
+    // The monodoc kernel ships inside this repo at `kernel/`. Resolve the
+    // shell relative to the crate so it is found regardless of the working
+    // directory — no absolute path hardcoded to one machine's layout.
+    PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/kernel/demo.html"))
 }
 
 fn main() -> ExitCode {

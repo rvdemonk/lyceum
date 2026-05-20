@@ -3,7 +3,7 @@
 A personal, LLM-maintained wiki. Markdown on disk is the source of truth;
 rendered monodoc HTML is the reading surface; Claude is the primary author.
 
-The vision, architecture, and naming are in `~/tools/monodoc/LYCEUM.md`.
+The vision, architecture, and naming are in `LYCEUM.md` (repo root).
 The authoring conventions are in the `writeup` skill
 (`~/.claude/skills/writeup/`).
 
@@ -30,10 +30,10 @@ lyceum render writeup.md --shell <path>  # non-default monodoc shell
 lyceum index                             # rebuild the home page only
 ```
 
-The renderer reads the monodoc HTML shell (default
-`~/tools/monodoc/demo.html`), inlines `theme.css`, swaps in the rendered
-article, and writes a single file. Output is self-contained apart from
-CDN fonts and mermaid.
+The renderer reads the monodoc HTML shell (default the bundled
+`kernel/demo.html`), inlines `theme.css`, swaps in the rendered article,
+and writes a single file. Output is self-contained apart from CDN fonts
+and mermaid.
 
 ## The home page
 
@@ -71,6 +71,15 @@ deleted are dropped from the home page automatically.
   anything else the writeup author drops in.
 
 ## Design
+
+The repository holds two halves:
+
+- **`kernel/`** — *monodoc*, the typographic system: the HTML shell
+  (`demo.html`), theme tokens (`theme.css`), and the design docs that
+  govern them (`PRINCIPLES.md`, `RESEARCH.md`). This is what a rendered
+  writeup *looks* like.
+- **The renderer** (`src/`) — the Rust that turns a writeup `.md` into a
+  page built on that kernel.
 
 | File | Role |
 |------|------|

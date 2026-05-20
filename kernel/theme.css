@@ -1,0 +1,77 @@
+/* ============================================================
+   THEMES
+   Each theme defines the same nine tokens. Typography, sizing,
+   and layout live in the document (demo.html) — themes only
+   touch colour. Default is warm dark; alternates apply via
+   `html.theme-*` class set by the config panel.
+============================================================ */
+
+
+/* ------------------------------------------------------------
+   Defaults (= warm dark). Lets the page render before JS loads
+   even without the theme class set.
+------------------------------------------------------------ */
+:root {
+  --bg:         #1c1914;
+  --bg-raised:  #242018;
+  --text:       #d4c9b6;
+  --text-head:  #e8ddd0;
+  --text-muted: #8a7e72;
+  --text-faint: #4a4440;
+  --accent:     #9e8866;
+  --code-bg:    #201e18;
+  --code-text:  #9abfb2;
+}
+
+
+/* ------------------------------------------------------------
+   ● Warm dark — the original. Coffee + leather. Brown-tinted
+   near-black background, cream text. Reads as a lit room.
+------------------------------------------------------------ */
+html.theme-warmdark {
+  --bg:         #1c1914;
+  --bg-raised:  #242018;
+  --text:       #d4c9b6;
+  --text-head:  #e8ddd0;
+  --text-muted: #8a7e72;
+  --text-faint: #4a4440;
+  --accent:     #9e8866;
+  --code-bg:    #201e18;
+  --code-text:  #9abfb2;
+}
+
+
+/* ------------------------------------------------------------
+   ◐ Cool dark — slate. Blue-grey near-black, cool off-white.
+   Reads as a quiet study at dusk; the more "terminal" of
+   the dark themes without going clinical.
+------------------------------------------------------------ */
+html.theme-cooldark {
+  --bg:         #14171c;
+  --bg-raised:  #1b1f25;
+  --text:       #c6ccd6;
+  --text-head:  #dde3ed;
+  --text-muted: #7a8492;
+  --text-faint: #3e4350;
+  --accent:     #8aa0bc;
+  --code-bg:    #181c22;
+  --code-text:  #a8c8b8;
+}
+
+
+/* ------------------------------------------------------------
+   ○ Parchment — warm light. Cream paper, deep brown ink.
+   Inverted polarity but the warmth carries; stays in the
+   "reading basin" rather than going clinical white.
+------------------------------------------------------------ */
+html.theme-parchment {
+  --bg:         #f1e9d8;
+  --bg-raised:  #e6dcc7;
+  --text:       #2e271c;
+  --text-head:  #1f1a12;
+  --text-muted: #6f6450;
+  --text-faint: #b8aa90;
+  --accent:     #8a6a35;
+  --code-bg:    #e6dcc7;
+  --code-text:  #355048;
+}

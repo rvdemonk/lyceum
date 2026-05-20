@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="en" class="font-serif size-md theme-warmdark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Primer — Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..900;1,8..60,300..900&family=Source+Sans+3:ital,wght@0,300;0,400;0,500;1,300;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./theme.css">
+  <style>
+
+    /* ============================================================
+       TOKENS
+    ============================================================ */
+
+    /* Colour tokens live in theme.css. This block owns typography
+       and rhythm only — substance, not surface. */
+    :root {
+      --serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+      --sans:  'Source Sans 3', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --mono:  'JetBrains Mono', 'Fira Code', monospace;
+
+      --font-body: var(--serif);
+      --base:      17px;
+      --lead:      1.5;
+      --lead-tight: 1.3;
+    }
+
+    html.font-serif { --font-body: var(--serif); }
+    html.font-sans  { --font-body: var(--sans); --lead: 1.48; }
+
+    html.size-sm { --base: 15px; }
+    html.size-md { --base: 17px; }
+    html.size-lg { --base: 20px; }
+
+
+    /* ============================================================
+       RESET
+    ============================================================ */
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+
+    /* ============================================================
+       BASE & LAYOUT
+       Body: 87.5% wide, 12.5% left padding (Tufte).
+       Text elements: 55% of body width.
+       Sidenotes: absolutely positioned at left: 58%, width: 38%
+       within position: relative article.
+    ============================================================ */
+
+    html {
+      font-size: var(--base);
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+      font-variant-ligatures: common-ligatures;
+    }
+
+    /* No reactive cursor. UI gives hover feedback through tone changes;
+       default arrow stays put. I-beam over text remains (selection is a
+       real action and the cursor signals it). */
+    button, a, [role="button"], summary, label { cursor: default; }
+
+    body {
+      font-family: var(--font-body);
+      width: 87.5%;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding-left: 12.5%;
+      counter-reset: sidenote-counter;
+    }
+
+    article {
+      position: relative;   /* contains absolutely-positioned sidenotes */
+      padding: 5rem 0 8rem;
+    }
+
+
+    /* ============================================================
+       MEASURE — text elements constrained to 55% of body
+    ============================================================ */
+
+    p, h1, h2, h3, ul, ol, pre, blockquote,
+    .pull-quote, hr, .epigraph {
+      width: 55%;
+    }
+
+
+    /* ============================================================
+       PARAGRAPHS
+       First-line indent (book convention). No paragraph margin —
+       the indent carries the visual break.
+    ============================================================ */
+
+    p {
+      line-height: var(--lead);
+      text-indent: 1.5em;
+    }
+
+    h1 + p, h2 + p, h3 + p,
+    p:first-child,
+    p.subtitle + p,
+    section > p:first-of-type,
+    blockquote + p,
+    hr + p,
+    .pull-quote + p {
+      text-indent: 0;
+    }
+
+    section + section { margin-top: 0.25rem; }
+
+
+    /* ============================================================
+       HEADINGS
+    ============================================================ */
+
+    h1, h2, h3 {
+      font-family: var(--font-body);
+      color: var(--text-head);
+      font-weight: 400;
+      text-indent: 0;
+    }
+
+    h1 {
+      font-size: 2rem;
+      line-height: 1.15;
+      font-weight: 300;
+      letter-spacing: -0.015em;
+      margin-top: 3rem;
+      margin-bottom: 0.35rem;
+    }
+
+    h2 {
+      font-size: 1.25rem;
+      line-height: var(--lead-tight);
+      font-style: italic;
+      margin-top: 2.6rem;
+      margin-bottom: 0.55rem;
+    }
+
+    h3 {
+      font-size: 0.88rem;
+      line-height: var(--lead);
+      font-variant: small-caps;
+      letter-spacing: 0.07em;
+      color: var(--text-muted);
+      margin-top: 2rem;
+      margin-bottom: 0.1rem;
+    }
+
+    p.subtitle {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      font-style: italic;
+      margin-top: 0.25rem;
+      margin-bottom: 2.8rem;
+      text-indent: 0;
+    }
+
+    span.newthought {
+      font-variant: small-caps;
+      font-size: 1.05em;
+      letter-spacing: 0.05em;
+    }
+
+
+    /* ============================================================
+       SIDENOTES (numbered) & MARGIN NOTES (unnumbered)
+       Absolutely positioned — JS sets top per-note to align
+       with its reference in the text.
+    ============================================================ */
+
+    aside.sidenote,
+    aside.marginnote {
+      position: absolute;
+      left: 58%;
+      width: 38%;
+      font-size: 0.78rem;
+      line-height: 1.44;
+      color: var(--text-muted);
+      font-style: normal;
+      /* hidden until JS has positioned; avoids flash at top of article */
+      visibility: hidden;
+    }
+
+    aside.sidenote.placed,
+    aside.marginnote.placed {
+      visibility: visible;
+    }
+
+    /* Superscript reference in body text.
+       Visible glyph stays subordinate to body (0.72em); a negative-margin
+       padding halo extends the tap target past the visible footprint
+       so it's reachable on touch without enlarging the chrome. */
+    .sn {
+      counter-increment: sidenote-counter;
+      padding: 0.3em 0.2em;
+      margin: -0.3em -0.2em;
+    }
+
+    .sn::after {
+      content: counter(sidenote-counter);
+      font-size: 0.72em;
+      position: relative;
+      top: -0.45em;        /* lift without touching line-height */
+      color: var(--text-muted);
+      margin-left: 0.1em;
+      transition: color 0.15s ease, border-color 0.15s ease;
+    }
+
+    /* Number prefix in sidenote text */
+    aside.sidenote::before {
+      content: counter(sidenote-counter) "\00a0";
+      color: var(--accent);
+      font-size: 0.75rem;
+    }
+
+    /* SIDENOTES OFF / MOBILE: on-demand reveal.
+       The note lives where it would naturally appear (right after its
+       paragraph) and is hidden until the reader taps the reference
+       superscript. Re-tap dismisses. The .notes-collapsed class is set
+       by JS in either of two cases: user toggled "Off", or viewport is
+       too narrow to host margin notes. Single rule set, two triggers. */
+
+    html.notes-collapsed aside.sidenote {
+      position: static;
+      display: block;
+      visibility: visible;
+      width: 55%;
+      margin: 0;
+      padding: 0 0 0 1em;
+      border-left: 1px solid transparent;
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      pointer-events: none;
+      transition: max-height 0.2s ease, opacity 0.2s ease,
+                  margin 0.2s ease, padding 0.2s ease,
+                  border-left-color 0.2s ease;
+    }
+
+    html.notes-collapsed aside.sidenote.open {
+      max-height: 30em;       /* generous; never reached for any reasonable note */
+      opacity: 1;
+      margin: 0.65em 0;
+      padding-top: 0.15em;
+      padding-bottom: 0.15em;
+      border-left-color: var(--text-faint);
+      pointer-events: auto;
+    }
+
+    html.notes-collapsed aside.sidenote::before {
+      content: counter(sidenote-counter) "\00a0";
+      color: var(--accent);
+    }
+
+    /* Marginnotes have no anchor in collapsed mode — hide entirely.
+       Documented trade-off: they're scan-layer ornament; if you've
+       turned the scan layer off, they go with it. */
+    html.notes-collapsed aside.marginnote {
+      display: none;
+    }
+
+    /* The reference superscript becomes a real interactive trigger */
+    html.notes-collapsed .sn { cursor: pointer; }
+
+    html.notes-collapsed .sn::after {
+      border-bottom: 1px solid var(--text-faint);
+      padding: 0 0.18em 0.06em;
+    }
+
+    html.notes-collapsed .sn:hover::after,
+    html.notes-collapsed .sn.open::after {
+      color: var(--text);
+      border-bottom-color: var(--text-muted);
+    }
+
+    /* Mobile rules live at the end of this stylesheet so they win
+       the cascade against any base rule of equal specificity. */
+
+
+    /* ============================================================
+       BLOCKQUOTE
+    ============================================================ */
+
+    blockquote {
+      margin: 1.6rem 0 1.6rem 2em;
+      padding: 0;
+      border: none;
+      font-style: italic;
+      width: calc(55% - 2em);
+    }
+
+    blockquote p {
+      width: 100%;
+      text-indent: 0;
+    }
+
+    blockquote footer {
+      margin-top: 0.45em;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      font-style: normal;
+    }
+
+    blockquote footer::before { content: "\2014\00a0"; }
+
+
+    /* ============================================================
+       EPIGRAPH
+    ============================================================ */
+
+    .epigraph {
+      margin: 0 0 5.5rem 0;
+      width: 55%;
+    }
+
+    .epigraph p {
+      width: 100%;
+      text-indent: 0;
+      font-style: italic;
+      color: var(--text-muted);
+    }
+
+    .epigraph footer {
+      margin-top: 0.4em;
+      font-size: 0.78rem;
+      color: var(--text-faint);
+      text-align: right;
+    }
+
+
+    /* ============================================================
+       PULL QUOTE
+       Not a magazine callout — a quiet emphasis. Same text column,
+       just lightly marked. Draws the scanner's eye without shouting.
+    ============================================================ */
+
+    .pull-quote {
+      font-size: 1rem;
+      line-height: 1.55;
+      color: var(--text-head);
+      font-style: italic;
+      margin: 1.8rem 0;
+      padding-left: 1.25em;
+      border-left: 1px solid var(--accent);
+      text-indent: 0 !important;
+    }
+
+
+    /* ============================================================
+       CODE
+    ============================================================ */
+
+    code {
+      font-family: var(--mono);
+      font-size: 0.8em;
+      background: var(--code-bg);
+      padding: 0.1em 0.32em;
+      border-radius: 2px;
+      color: var(--code-text);
+    }
+
+    pre {
+      background: var(--code-bg);
+      padding: 1.1em 1.4em;
+      margin: 1.4rem 0;
+      overflow-x: auto;
+      border-radius: 3px;
+      border-left: 2px solid var(--text-faint);
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+      font-size: 0.78rem;
+      line-height: 1.55;
+      color: var(--code-text);
+    }
+
+
+    /* ============================================================
+       LISTS
+    ============================================================ */
+
+    ul, ol {
+      padding-left: 1.35em;
+      margin: 0.75rem 0;
+      line-height: var(--lead);
+    }
+
+    li { margin-bottom: 0.18em; }
+    li::marker { color: var(--text-muted); }
+    li p { width: 100%; text-indent: 0; }
+
+
+    /* ============================================================
+       SECTION BREAK
+    ============================================================ */
+
+    hr {
+      border: none;
+      height: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 1.25rem 0;
+    }
+
+    hr::after {
+      content: "\2731\2003\2731\2003\2731";
+      color: var(--text-faint);
+      font-size: 0.65rem;
+      letter-spacing: 0.3em;
+    }
+
+
+    /* ============================================================
+       LINKS
+    ============================================================ */
+
+    a {
+      color: inherit;
+      text-decoration: underline;
+      text-decoration-color: var(--text-faint);
+      text-underline-offset: 0.18em;
+      transition: text-decoration-color 0.15s;
+    }
+
+    a:hover { text-decoration-color: var(--text-muted); }
+
+
+    /* ============================================================
+       TOC NAV
+       Ambient at rest: faint dots mark each section.
+       Hover anywhere on the nav reveals section labels.
+       Lives in the left margin, never overlaps text column.
+    ============================================================ */
+
+    /* Chrome scale is locked: px-based and decoupled from --base.
+       Reader preferences (font/size) must not reflow UI controls. */
+    #toc-nav {
+      position: fixed;
+      top: 40px;
+      left: 0;                      /* anchor to edge */
+      z-index: 50;
+      /* Generous padding = large hover zone, no visual footprint */
+      padding: 24px;
+      font: 13px/1.4 var(--sans);
+      cursor: default;
+    }
+
+    #toc-nav ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+    }
+
+    .toc-item {
+      display: flex;
+      align-items: center;
+      cursor: default;
+      user-select: none;
+    }
+
+    /* Always-visible dot */
+    .toc-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--text-faint);
+      flex-shrink: 0;
+      transition: background 0.2s;
+    }
+
+    .toc-h1 .toc-dot {
+      width: 5px;
+      height: 5px;
+    }
+
+    .toc-item.active .toc-dot {
+      background: var(--text-muted);
+    }
+
+    /* Label wrapper: rendered at natural width always; revealed via
+       opacity + transform on nav hover. No layout-driven clipping —
+       nav box is always sized to the longest label, but labels are
+       invisible & inert at rest. */
+    .toc-label-wrap {
+      padding-left: 12px;
+      opacity: 0;
+      transform: translateX(-6px);
+      pointer-events: none;
+      transition: opacity 0.22s ease, transform 0.22s ease;
+    }
+
+    #toc-nav:hover .toc-label-wrap {
+      opacity: 1;
+      transform: translateX(0);
+      pointer-events: auto;
+    }
+
+    .toc-label {
+      display: inline-block;        /* size to text, not parent */
+      /* font inherits chrome scale (13px sans) */
+      color: var(--text-faint);
+      white-space: nowrap;
+      transition: color 0.15s;
+    }
+
+    .toc-h1 .toc-label {
+      color: var(--text-muted);
+    }
+
+    .toc-item:hover .toc-label  { color: var(--text-muted); }
+    .toc-item.active .toc-label { color: var(--text); }
+
+    /* Only show where left margin has room */
+    @media (max-width: 900px) { #toc-nav { display: none; } }
+
+
+    /* ============================================================
+       CONFIG PANEL
+       Same peripheral-vision philosophy as the TOC: a faint Aa
+       handle marks the corner; hovering the area reveals the panel
+       via opacity + transform. No chrome at rest, no click toggle.
+    ============================================================ */
+
+    /* Chrome scale is locked: px-based and decoupled from --base.
+       Reader preferences (font/size) must not reflow UI controls. */
+    #cfg-area {
+      position: fixed;
+      top: 0;
+      right: 0;
+      z-index: 100;
+      /* Generous hover zone, zero visual footprint */
+      padding: 24px 24px 32px 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 14px;
+      font: 13px/1.4 var(--sans);
+      cursor: default;
+      user-select: none;
+    }
+
+    .cfg-handle {
+      letter-spacing: 0.02em;
+      color: var(--text-faint);
+      transition: color 0.18s ease;
+    }
+
+    #cfg-area:hover .cfg-handle { color: var(--text-muted); }
+
+    #cfg-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      opacity: 0;
+      transform: translateY(-4px);
+      pointer-events: none;
+      transition: opacity 0.22s ease, transform 0.22s ease;
+    }
+
+    #cfg-area:hover #cfg-panel {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .cfg-row {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      align-items: flex-end;
+    }
+
+    .cfg-label {
+      color: var(--text-faint);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .cfg-options { display: flex; gap: 4px; }
+
+    .cfg-btn {
+      background: none;
+      border: none;
+      color: var(--text-faint);
+      /* Visually quiet, physically confident — comfortable hit area */
+      padding: 5px 9px;
+      font: inherit;
+      transition: color 0.15s ease;
+    }
+
+    .cfg-btn:hover { color: var(--text-muted); }
+
+    .cfg-btn.on {
+      color: var(--text);
+    }
+
+
+    /* ============================================================
+       MERMAID DIAGRAMS
+       Diagrams are not prose — they escape the 55% measure and take
+       the full article width. mermaid.js renders <div class="mermaid">
+       elements; lyceum's renderer emits them from ```mermaid fenced
+       blocks. Fixed dark theme for now — see BACKLOG.md for per-theme
+       reactivity.
+    ============================================================ */
+
+    .mermaid {
+      margin: 1.9rem 0;
+      text-align: center;
+      overflow-x: auto;
+    }
+
+    .mermaid svg {
+      max-width: 100%;
+      height: auto;
+    }
+
+
+    /* ============================================================
+       TOPBAR (mobile only)
+       Permanent status bar holding the document title and the
+       config trigger. Replaces the corner-Aa hover pattern on
+       touch, which doesn't fire reliably. Title doubles as
+       orientation once the H1 has scrolled offscreen.
+    ============================================================ */
+
+    #topbar {
+      display: none;          /* desktop default; mobile rule below shows it */
+    }
+
+
+    /* ============================================================
+       MOBILE
+       Always last in the stylesheet so it overrides any base rule
+       of equal specificity. The desktop layout assumes a left
+       gutter (12.5%) and a 55%-of-body measure to leave room for
+       margin notes — neither holds on a phone. Reset body to fill
+       the viewport, let text elements fill the column, and route
+       the config panel through a tappable topbar.
+    ============================================================ */
+
+    @media (max-width: 800px) {
+
+      /* --- Body & measure --- */
+
+      body {
+        width: 100%;
+        max-width: none;
+        padding-left: 5%;
+        padding-right: 5%;
+      }
+
+      article {
+        padding: 4.5rem 0 5rem;     /* top space accommodates the topbar */
+      }
+
+      p, h1, h2, h3, ul, ol, pre,
+      .pull-quote, hr, .epigraph {
+        width: auto;
+      }
+
+      .epigraph p,
+      .epigraph footer {
+        width: auto;
+      }
+
+      blockquote {
+        width: auto;
+        margin: 1.4rem 0 1.4rem 1em;
+      }
+
+      /* --- Notes --- */
+
+      html.notes-collapsed aside.sidenote {
+        width: auto;
+        font-size: 0.82rem;
+      }
+
+      /* --- Topbar --- */
+
+      #topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        z-index: 200;             /* above cfg-panel dropdown */
+        padding: 11px 5%;
+        background: var(--bg);
+        border-bottom: 1px solid var(--bg-raised);
+        font: 13px/1.4 var(--sans);
+      }
+
+      .topbar-title {
+        color: var(--text-muted);
+        font-style: italic;
+        font-family: var(--serif);
+        font-size: 14px;
+        /* Truncate cleanly if the title is long */
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        padding-right: 1em;
+        /* Hidden by default; revealed only when the H1 has scrolled
+           offscreen (orientation cue, not duplication). JS sets the
+           .visible class via IntersectionObserver. */
+        opacity: 0;
+        transition: opacity 0.22s ease;
+      }
+
+      .topbar-title.visible { opacity: 1; }
+
+      #topbar-cfg-btn {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        font: inherit;
+        /* Comfortable hit area; visible footprint stays subtle */
+        padding: 8px 12px;
+        margin: -4px -8px;
+        cursor: pointer;
+        transition: color 0.15s ease;
+      }
+
+      #topbar-cfg-btn:hover,
+      html.cfg-open #topbar-cfg-btn {
+        color: var(--text);
+      }
+
+      /* --- Config panel: dropdown from topbar instead of corner hover --- */
+
+      /* Hide the corner Aa handle on mobile; topbar owns the trigger */
+      #cfg-area > .cfg-handle {
+        display: none;
+      }
+
+      /* Reposition the cfg-area as a full-width dropdown sitting
+         just below the topbar. pointer-events:none on the container
+         so it doesn't eat taps on article content below; the panel
+         itself re-enables them when open. */
+      #cfg-area {
+        top: 41px;              /* below topbar (11+13+11+border ≈ 36, +5 buffer) */
+        right: 0; left: 0;
+        padding: 0;
+        align-items: stretch;
+        pointer-events: none;
+      }
+
+      /* Disable the desktop hover-reveal — touch hover is unreliable.
+         Reveal is driven by html.cfg-open instead, set by the topbar
+         button. */
+      #cfg-area:hover #cfg-panel {
+        opacity: 0;
+        transform: translateY(-8px);
+        pointer-events: none;
+      }
+
+      #cfg-panel {
+        background: var(--bg);
+        border-bottom: 1px solid var(--bg-raised);
+        padding: 16px 5% 20px;
+        gap: 14px;
+        align-items: flex-start;
+      }
+
+      html.cfg-open #cfg-panel {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+      }
+
+      .cfg-row {
+        align-items: flex-start;
+      }
+
+      /* Sidenotes toggle hidden — no margin alternative to fall
+         back to here, so the choice is moot. */
+      .cfg-row.sidenotes-row { display: none; }
+    }
+
+  </style>
+</head>
+<body>
+
+<!-- TOPBAR (mobile only — display controlled by media query) -->
+<header id="topbar">
+  <span class="topbar-title"></span>
+  <button id="topbar-cfg-btn" aria-label="Settings" aria-expanded="false">Aa</button>
+</header>
+
+<!-- TOC NAV -->
+<nav id="toc-nav" aria-label="Contents">
+  <ul id="toc-list"></ul>
+</nav>
+
+<!-- CONFIG PANEL -->
+<div id="cfg-area">
+<span class="cfg-handle">Aa</span>
+<div id="cfg-panel">
+
+  <div class="cfg-row">
+    <span class="cfg-label">Theme</span>
+    <div class="cfg-options">
+      <button class="cfg-btn on" data-group="theme" data-val="warmdark"  onclick="cfgSet(this)" title="Warm dark">●</button>
+      <button class="cfg-btn"    data-group="theme" data-val="cooldark"  onclick="cfgSet(this)" title="Cool dark">◐</button>
+      <button class="cfg-btn"    data-group="theme" data-val="parchment" onclick="cfgSet(this)" title="Parchment">○</button>
+    </div>
+  </div>
+
+  <div class="cfg-row">
+    <span class="cfg-label">Typeface</span>
+    <div class="cfg-options">
+      <button class="cfg-btn on" data-group="font" data-val="serif" onclick="cfgSet(this)">Serif</button>
+      <button class="cfg-btn"    data-group="font" data-val="sans"  onclick="cfgSet(this)">Sans</button>
+    </div>
+  </div>
+
+  <div class="cfg-row">
+    <span class="cfg-label">Size</span>
+    <div class="cfg-options">
+      <button class="cfg-btn"    data-group="size" data-val="sm" onclick="cfgSet(this)">S</button>
+      <button class="cfg-btn on" data-group="size" data-val="md" onclick="cfgSet(this)">M</button>
+      <button class="cfg-btn"    data-group="size" data-val="lg" onclick="cfgSet(this)">L</button>
+    </div>
+  </div>
+
+  <div class="cfg-row sidenotes-row">
+    <span class="cfg-label">Sidenotes</span>
+    <div class="cfg-options">
+      <button class="cfg-btn on" data-group="sidenotes" data-val="on"  onclick="cfgSet(this)">On</button>
+      <button class="cfg-btn"    data-group="sidenotes" data-val="off" onclick="cfgSet(this)">Off</button>
+    </div>
+  </div>
+
+</div><!-- /#cfg-panel -->
+</div><!-- /#cfg-area -->
+
+
+<!-- CONTENT -->
+<article>
+
+  <div class="epigraph">
+    <p>The medium is the message.</p>
+    <footer>Marshall McLuhan, <em>Understanding Media,</em> 1964</footer>
+  </div>
+
+  <h1>The Grain of the Screen</h1>
+  <p class="subtitle">Notes on reading, rendering, and the persistence of text</p>
+
+  <section>
+    <p><span class="newthought">Every reading surface</span> carries latent assumptions about how thought should move. The codex taught us that ideas progress — that a beginning precedes a middle and a middle precedes an end. The scroll implied something else: continuity, river-like, without the caesura of the page-turn. What does the LED screen imply?<span class="sn" id="sn-1"></span></p>
+    <aside class="sidenote" data-ref="sn-1">The first mass-market e-readers appeared in 2007. Within five years, long-form reading on backlit devices had become normalised — though the neurological literature on comprehension differences between ink and phosphor remains contested.</aside>
+
+    <p>It implies, above all, a kind of restlessness. The browser encodes impatience in its architecture: the tab bar, the back button, the address field. The text exists in competition with everything else the window could be showing. This is not a defect of readers but a feature of the container.</p>
+
+    <p>Good typography, in this environment, is a form of argument. It argues: <em>stay here.</em> It makes the page feel safe enough, and quiet enough, and distinct enough from the surrounding noise that the eye is willing to commit. The designer's job is to minimise the activation energy required for sustained attention.</p>
+  </section>
+
+  <section>
+    <h2>On the persistence of the serif</h2>
+
+    <p><span class="newthought">The serif question</span> has been rehearsed so many times it has worn a groove in the literature. Sans or serif for screen? The research, when stripped of its confounds, returns a frustrating null: at modern display resolutions, it does not measurably matter. Gwern ran 142,983 visits across four typefaces — Baskerville, Georgia, Trebuchet, Helvetica — and found no statistically significant engagement difference. The most extreme pairwise result didn't breach p = 0.05.</p>
+
+    <p>And yet the question persists because it is actually a question about something else. Serif type carries cultural information — it signals seriousness, duration, the expectation that the reader will stay. This is not legibility in the mechanical sense. It is legibility in the social sense: an agreement between writer and reader about what kind of reading is being invited.<span class="sn" id="sn-2"></span></p>
+    <aside class="sidenote" data-ref="sn-2">Matthew Butterick notes that Georgia and Calibri, both designed for low-DPI CRT screens, have "no special legibility benefit on today's screens." Their design compromises — open counters, exaggerated strokes — compensated for lost resolution that high-DPI displays no longer require.</aside>
+
+    <blockquote>
+      <p>There are too many substantive matters to think about. I let it go at that — one serif and one sans-serif web font.</p>
+      <footer>Edward Tufte, on choosing the typeface for his website</footer>
+    </blockquote>
+
+    <p>Tufte's indifference is instructive. He is not wrong that typography can become a distraction from content — the type obsessive who spends three days selecting a body face has perhaps misallocated the week. But the choice is not neutral. Indifference is itself a position.</p>
+  </section>
+
+  <section>
+    <h2>Contrast and the open iris</h2>
+
+    <p><span class="newthought">Reading in the dark</span> forces the iris open. A wider aperture means more light from bright areas bleeds into adjacent dark ones — the letterform halates, glows slightly at its edges, loses sharpness. This is why white text on pure black feels harsh to roughly half of readers, and why the "just use dark mode" response to eye strain is more complicated than it appears.<span class="sn" id="sn-3"></span></p>
+    <aside class="sidenote" data-ref="sn-3">Halation affects readers with astigmatism most acutely — roughly 47% of the population. The APCA standard (WCAG 3.0, in progress) corrects for the polarity-blindness of WCAG 2.x, which was derived from positive polarity only and systematically overstates contrast for light-on-dark pairings.</aside>
+
+    <p>The practitioner consensus — Google's Android dark theme ships with <code>#121212</code> as background — solves the OLED smearing problem (pure black means pixels physically off; they lag when content scrolls over them) but addresses contrast mechanically, not perceptually. The result reads as correct by the numbers and corporate by the eye.</p>
+
+    <p class="pull-quote">The sweet spot is not a point but a basin — a range of warm near-blacks and muted off-whites within which readers can find a position that suits their eyes, ambient light, and physiology.</p>
+
+    <p>The practical upshot: avoid pure values at either extreme. A background around <code>#1c1914</code> — near-black with a warm cast — and body text around <code>#d4c9b6</code> produces contrast that meets the APCA threshold without clinical glare. The warmth is not decorative. A brown-tinted dark reads as a lit room; a cold grey reads as a dead monitor.</p>
+  </section>
+
+  <section>
+    <h2>Scanning and flow</h2>
+
+    <p><span class="newthought">The F-pattern</span> — the eye-tracking signature of a reader who has decided not to fully read — is commonly described as an inevitable property of human attention on screens. The more useful reframe is that it is a failure state, not a given. It arises when the text provides no rhythm for the eye to follow. The cure is not fragmentation — it is structure.</p>
+
+    <p>There is a meaningful difference between two strategies for serving both scanners and readers simultaneously:</p>
+
+    <ul>
+      <li><strong>Chunking</strong> — breaking prose into visually separated units with heavy subheading use. Serves scanners. Destroys flow. The argument that depends on sequential reading cannot survive it.</li>
+      <li><strong>Semantic zoom</strong> — adding a scan layer (headings, margin notes) on top of uninterrupted prose. Scanners navigate via the layer. Readers ignore it. Neither mode is compromised.</li>
+    </ul>
+
+    <p>The second strategy is Gwern's term, and it is the more defensible one for documents that have a thesis. Margin notes play a structural role beyond annotation — they function as a compressed index of the main argument, visible to the scanner without interrupting the reading line.<span class="sn" id="sn-4"></span></p>
+    <aside class="sidenote" data-ref="sn-4">This extends the Tufte sidenote system, which uses margin notes primarily for captions and figure annotations. The semantic zoom argument claims they can also carry the scan layer of an argumentative document without requiring subheadings every two paragraphs.</aside>
+  </section>
+
+  <section>
+    <h2>Measure</h2>
+
+    <p><span class="newthought">Forty-five to ninety</span> characters per line: the range cited most often. Sixty-five to sixty-eight: the range cited most reliably. Eric Lawler validated 66 characters against 66 physical books. Firefox Reader mode auto-constrains to approximately 68. The convergence reflects the distance the eye can comfortably travel before returning to find the start of the next line without losing its place.</p>
+
+    <p>On a display, measure is the most neglected variable. Most websites run full-width text to the viewport edge, producing lines of 120 characters or more. The experience is one of mild continuous effort — reading, but working slightly harder than necessary on every line. The cumulative cost, across a long document, is fatigue that the reader attributes to the content rather than the container.</p>
+
+    <pre><code>/* The constraint that matters most */
+p {
+  max-width:   65ch;   /* ~65 characters */
+  line-height: 1.5;    /* ~150% of base size */
+  font-size:   17px;   /* minimum comfortable size */
+}</code></pre>
+
+    <p>The fix is one line of CSS. Its persistence as an unsolved problem is a design philosophy failure, not a technical one — the assumption that more width means more value, the reluctance to surrender real estate to empty air.</p>
+  </section>
+
+  <hr>
+
+  <section>
+    <p>These are starting notes, not conclusions. The goal is a set of primitives stable enough to build on — not a finished aesthetic, but a baseline from which variation is legible as variation, and deviation is recognisable as a choice.</p>
+  </section>
+
+</article>
+
+<script>
+  /* ============================================================
+     SIDENOTE POSITIONING
+     Reads the ref element's position and sets each aside's top
+     to align it with its reference in the text.
+     Called on load, resize, and any config change that reflows.
+  ============================================================ */
+
+  let resizeTimer;
+
+  function positionSidenotes() {
+    // When notes are collapsed (user toggled off, or viewport narrow),
+    // CSS handles layout via on-demand reveal — no positioning needed.
+    if (document.documentElement.classList.contains('notes-collapsed')) return;
+
+    const article = document.querySelector('article');
+    if (!article) return;
+
+    const articleTop = article.getBoundingClientRect().top + window.scrollY;
+
+    document.querySelectorAll('aside.sidenote[data-ref], aside.marginnote[data-ref]').forEach(aside => {
+      const ref = document.getElementById(aside.dataset.ref);
+      if (!ref) return;
+
+      const refTop = ref.getBoundingClientRect().top + window.scrollY;
+      aside.style.top = (refTop - articleTop) + 'px';
+      aside.classList.add('placed');
+    });
+  }
+
+  window.addEventListener('load', positionSidenotes);
+
+  // Resize handler is consolidated below (in the notes-mode block) so
+  // syncNotesMode and positionSidenotes share one debounce.
+
+
+  /* ============================================================
+     CONFIG PANEL
+  ============================================================ */
+
+  function cfgSet(btn) {
+    const group = btn.dataset.group;
+    const val   = btn.dataset.val;
+    const html  = document.documentElement;
+
+    html.className = html.className
+      .split(' ')
+      .filter(c => !c.startsWith(group + '-'))
+      .join(' ');
+
+    html.classList.add(group + '-' + val);
+
+    btn.closest('.cfg-options')
+       .querySelectorAll('.cfg-btn')
+       .forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+
+    // Reposition after font/size changes reflow the document
+    if (group === 'font' || group === 'size') {
+      // Wait for font/size to apply before measuring
+      setTimeout(positionSidenotes, 200);
+    }
+
+    // Sidenotes mode change: reconcile derived state, then reposition
+    if (group === 'sidenotes') {
+      syncNotesMode();
+      if (val === 'on') setTimeout(positionSidenotes, 50);
+    }
+  }
+
+
+  /* ============================================================
+     NOTES MODE — DERIVED STATE & ON-DEMAND REVEAL
+     The .notes-collapsed class on <html> drives the on-demand
+     CSS. It's set whenever the user picked "Off" OR the viewport
+     is too narrow for margin notes. JS reconciles on every
+     toggle and resize; click handlers on .sn toggle the .open
+     state of the corresponding aside.
+  ============================================================ */
+
+  function syncNotesMode() {
+    const html     = document.documentElement;
+    const userOff  = html.classList.contains('sidenotes-off');
+    const narrow   = window.matchMedia('(max-width: 800px)').matches;
+    const collapse = userOff || narrow;
+
+    html.classList.toggle('notes-collapsed', collapse);
+
+    // Returning to side mode: drop any open-state from previous session
+    if (!collapse) {
+      document.querySelectorAll('aside.sidenote.open, .sn.open')
+        .forEach(el => el.classList.remove('open'));
+    }
+  }
+
+  function wireSidenoteTriggers() {
+    document.querySelectorAll('.sn').forEach(sn => {
+      const aside = document.querySelector(
+        `aside.sidenote[data-ref="${sn.id}"]`
+      );
+      if (!aside) return;
+
+      sn.addEventListener('click', e => {
+        // Only interactive when notes are collapsed
+        if (!document.documentElement.classList.contains('notes-collapsed')) return;
+        e.preventDefault();
+        const isOpen = aside.classList.toggle('open');
+        sn.classList.toggle('open', isOpen);
+      });
+    });
+  }
+
+  // Resync derived mode on viewport changes (debounced via existing timer)
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      syncNotesMode();
+      positionSidenotes();
+    }, 120);
+  });
+
+  syncNotesMode();
+  wireSidenoteTriggers();
+
+
+  /* ============================================================
+     TOPBAR (mobile)
+     The topbar is rendered for all viewports but only displayed
+     on mobile (CSS). Its title is populated from the article H1.
+     The Aa button toggles `html.cfg-open` which the mobile CSS
+     uses to drive the dropdown reveal of the existing cfg-panel.
+  ============================================================ */
+
+  function initTopbar() {
+    const titleEl = document.querySelector('.topbar-title');
+    const h1      = document.querySelector('article h1');
+
+    if (titleEl && h1) {
+      titleEl.textContent = h1.textContent.trim();
+
+      // Title fades in only once the H1 has scrolled out of view —
+      // it's an orientation cue for "you've lost the heading," not a
+      // duplicate of the heading itself. The Aa button stays put
+      // either way (justify-content: space-between).
+      const obs = new IntersectionObserver(([entry]) => {
+        titleEl.classList.toggle('visible', !entry.isIntersecting);
+      });
+      obs.observe(h1);
+    }
+
+    const btn = document.getElementById('topbar-cfg-btn');
+    if (!btn) return;
+
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const open = document.documentElement.classList.toggle('cfg-open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+  }
+
+  initTopbar();
+
+  /* ============================================================
+     TOC — BUILD & SCROLL TRACKING
+  ============================================================ */
+
+  function buildTOC() {
+    const list = document.getElementById('toc-list');
+    if (!list) return;
+
+    document.querySelectorAll('article h1, article h2').forEach((heading, i) => {
+      if (!heading.id) heading.id = 'h-' + i;
+
+      const li   = document.createElement('li');
+      li.className = 'toc-item toc-' + heading.tagName.toLowerCase();
+      li.dataset.target = heading.id;
+
+      const dot  = document.createElement('span');
+      dot.className = 'toc-dot';
+
+      const wrap = document.createElement('span');
+      wrap.className = 'toc-label-wrap';
+
+      const lbl  = document.createElement('span');
+      lbl.className = 'toc-label';
+      lbl.textContent = heading.textContent.trim();
+
+      wrap.appendChild(lbl);
+      li.appendChild(dot);
+      li.appendChild(wrap);
+
+      li.addEventListener('click', () =>
+        heading.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      );
+
+      list.appendChild(li);
+    });
+
+  }
+
+  function trackTOC() {
+    const headings = Array.from(document.querySelectorAll('article h1, article h2'));
+    if (!headings.length) return;
+
+    function update() {
+      // The active section is the last heading whose top is above 25% of viewport
+      const threshold = window.scrollY + window.innerHeight * 0.25;
+      let activeId = headings[0].id;
+
+      for (const h of headings) {
+        if (h.offsetTop <= threshold) activeId = h.id;
+        else break;
+      }
+
+      document.querySelectorAll('.toc-item').forEach(item =>
+        item.classList.toggle('active', item.dataset.target === activeId)
+      );
+    }
+
+    window.addEventListener('scroll', update, { passive: true });
+    update();
+  }
+
+  buildTOC();
+  trackTOC();
+</script>
+
+<!-- MERMAID — renders <div class="mermaid"> diagrams. Loaded from CDN;
+     harmless when the document contains none. -->
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: 'dark',
+    securityLevel: 'loose',
+    flowchart: { htmlLabels: true, curve: 'basis' },
+    themeVariables: { fontFamily: "'Source Sans 3', sans-serif" }
+  });
+  mermaid.run();
+</script>
+
+</body>
+</html>

@@ -57,6 +57,6 @@ That is the whole form. Nothing here needs a build step more elaborate than one 
 
 [^vanilla]: "Vanilla" is load-bearing. No custom markdown dialect — standard syntax plus HTML escape hatches. A custom dialect would lock the content into this one renderer; plain markdown keeps it portable.
 
-[^shell]: The shell is `~/tools/monodoc/demo.html`. Reading it live means the renderer always reflects the current state of the typographic kernel — there is no copied template to drift out of sync.
+[^shell]: The shell is the bundled `kernel/demo.html`. Reading it live means the renderer always reflects the current state of the typographic kernel — there is no copied template to drift out of sync.
 
 [^command]: `lyceum render writeup.md`. That is the entire invocation.

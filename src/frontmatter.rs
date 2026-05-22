@@ -17,6 +17,9 @@ pub struct FrontMatter {
     pub collection: Option<String>,
     pub epigraph: Option<String>,
     pub epigraph_source: Option<String>,
+    /// When true, the writeup is kept in the local bundle but never
+    /// included in `lyceum sync` — it does not leave the machine.
+    pub local_only: bool,
 }
 
 /// Split a document into (front-matter, body).
@@ -71,6 +74,7 @@ fn parse(yaml: &str) -> FrontMatter {
             "epigraph_source" => fm.epigraph_source = nonempty(val),
             "collection" => fm.collection = nonempty(val),
             "tags" => fm.tags = parse_list(val),
+            "local_only" => fm.local_only = parse_bool(val),
             _ => {}
         }
     }
@@ -83,6 +87,15 @@ fn nonempty(s: &str) -> Option<String> {
     } else {
         Some(s.to_string())
     }
+}
+
+/// Parse a boolean scalar. Anything not clearly truthy is false — the
+/// safe default for `local_only` (a writeup syncs unless it opts out).
+fn parse_bool(s: &str) -> bool {
+    matches!(
+        s.trim().to_ascii_lowercase().as_str(),
+        "true" | "yes" | "on" | "1"
+    )
 }
 
 /// Strip a single matched pair of surrounding quotes.

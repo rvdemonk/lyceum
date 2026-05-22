@@ -28,10 +28,23 @@ pub struct Entry {
     /// The collection (family) this writeup belongs to on the home page.
     #[serde(default)]
     pub collection: Option<String>,
+    /// Stable URL slug. The writeup renders to `w/<slug>.html` inside the
+    /// bundle; the slug is assigned once and kept, so links stay durable.
+    #[serde(default)]
+    pub slug: String,
+    /// When true, the writeup stays in the local bundle but is excluded
+    /// from `lyceum sync` — it never leaves the machine.
+    #[serde(default)]
+    pub local_only: bool,
     /// Absolute path to the source `.md`.
     pub source: String,
-    /// Absolute path to the rendered `.html`.
-    pub output: String,
+}
+
+impl Entry {
+    /// The rendered page's path inside a bundle rooted at `dir`.
+    pub fn page_in(&self, dir: &std::path::Path) -> PathBuf {
+        dir.join("w").join(format!("{}.html", self.slug))
+    }
 }
 
 /// The lyceum home directory: `~/lyceum`.

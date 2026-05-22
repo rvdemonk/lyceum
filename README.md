@@ -9,14 +9,17 @@ The authoring conventions are in the `writeup` skill
 
 ## Status — v0
 
-Two things work: the **renderer** and the **home-page index**.
+The **renderer**, the **home-page index**, and the **library bundle**
+work — render, build, serve, and sync.
 
 - `lyceum render` converts a *writeup* — vanilla Markdown + YAML
   front-matter + HTML escape hatches — into a self-contained monodoc
   HTML page.
 - Every render is recorded in a central **registry**, and the **home
-  page** (`~/lyceum/index.html`) is regenerated from it — one index of
-  every writeup, wherever its source file lives.
+  page** is regenerated from it — one index of every writeup, wherever
+  its source file lives.
+- The output is a **self-contained bundle** at `~/lyceum/` that can be
+  opened directly, served locally with live-reload, or synced to a host.
 
 The rest of the wiki layer (`sources/`, ingest/query/lint, wiki-links)
 is **not built yet**.
@@ -24,23 +27,48 @@ is **not built yet**.
 ## Usage
 
 ```
-lyceum render examples/sample.md         # render + refresh the home page
-lyceum render writeup.md -o out.html     # explicit output path
-lyceum render writeup.md --shell <path>  # non-default monodoc shell
-lyceum index                             # rebuild the home page only
+lyceum render writeup.md          # render one writeup into the bundle, refresh the index
+lyceum index                      # regenerate the home page from the registry
+lyceum build                      # re-render every registered writeup into a clean bundle
+lyceum serve                      # serve the bundle locally with live-reload
+lyceum sync                       # rsync the bundle (minus local_only writeups) to a host
 ```
 
-The renderer reads the monodoc HTML shell (default the bundled
-`kernel/demo.html`), inlines `theme.css`, swaps in the rendered article,
-and writes a single file. Output is self-contained apart from CDN fonts
-and mermaid.
+`render` accepts `--shell <path>` for a non-default monodoc shell.
+`serve` accepts `--port` and `--host` (use `--host 0.0.0.0` to reach it
+from a phone on the same network). `sync` accepts `--target` and
+`--dry-run`.
+
+The renderer reads the monodoc HTML shell (the bundled `kernel/demo.html`
+for writeups, `kernel/index-shell.html` for the home page), inlines
+`theme.css`, swaps in the rendered article, and writes one self-contained
+file — self-contained apart from CDN fonts and mermaid.
+
+## The bundle
+
+`~/lyceum/` is a **self-contained bundle**: `index.html` plus one
+`w/<slug>.html` per writeup, linked relatively. The same directory works
+three ways with no translation — opened as a `file://` page, served by
+`lyceum serve`, or rsync'd to a host. The writeup *sources* (`.md`) stay
+colocated with the projects they document; only the rendered HTML — a
+derived artifact — is gathered into the bundle.
+
+- **`lyceum serve`** is a *local* tool: an http server with live-reload,
+  watching the kernel and every writeup source. A host serving the
+  library needs no lyceum process — the bundle is just static files.
+- **`lyceum sync`** builds a *filtered* bundle (every writeup except the
+  `local_only` ones) into a staging directory and rsyncs it. The rsync
+  destination lives in `~/lyceum/.sync-target` — deployment config, not
+  code.
+- A writeup with `local_only: true` in its front-matter stays in the
+  local bundle but is never synced — it does not leave the machine.
 
 ## The home page
 
 `~/lyceum/index.html` lists every writeup, **grouped into collections**,
-each entry linking to its rendered HTML. Open it as a browser tab and
-leave it there; re-render any writeup (or run `lyceum index`) and refresh
-the tab to see the update.
+each entry linking to its rendered page (`w/<slug>.html`). Open it as a
+browser tab and leave it there; under `lyceum serve` it live-reloads on
+every change.
 
 The home page is an *instrument*, not a writeup — a standing view of the
 library — so it has its own shell (`kernel/index-shell.html`): sans
@@ -56,11 +84,13 @@ disk layout — two writeups in different project directories can, and
 often should, belong to the same collection. When `collection` is
 absent, the home page falls back to grouping by source directory.
 
-Writeups stay **colocated with the projects they document** — the
-registry (`~/lyceum/registry.json`) is the thread that connects them
-without moving them. The registry is a derived cache: delete it and it
-rebuilds as writeups are re-rendered. Entries whose source `.md` has been
-deleted are dropped from the home page automatically.
+Writeup *sources* stay **colocated with the projects they document** —
+the registry (`~/lyceum/registry.json`) is the thread that connects them
+without moving them. The registry is a derived cache: every build
+reconciles it against the source files — metadata is refreshed from
+front-matter, entries whose source `.md` has vanished are dropped, and
+slugs are assigned once and kept so links stay durable. Delete the
+registry entirely and it rebuilds from the next render or build.
 
 ## What the renderer handles
 
@@ -91,11 +121,14 @@ The repository holds two halves:
 
 | File | Role |
 |------|------|
-| `src/main.rs` | CLI, shell assembly, render/index orchestration |
+| `src/main.rs` | CLI — a thin dispatcher over the modules below |
+| `src/bundle.rs` | Slugs, shell assembly, the build pipeline |
 | `src/frontmatter.rs` | Small dependency-free front-matter parser |
 | `src/render.rs` | Markdown -> article HTML; footnote + mermaid transforms |
 | `src/registry.rs` | The writeup registry — load / upsert / save |
 | `src/index.rs` | Home-page generation from the registry |
+| `src/serve.rs` | Local dev server — http + live-reload + file-watch |
+| `src/sync.rs` | Filtered staging build + rsync to a host |
 
 The renderer stays thin on purpose. The "vanilla MD + HTML escape
 hatches" contract means most typographic primitives are just raw HTML the

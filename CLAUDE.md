@@ -17,7 +17,7 @@ commitments live in `kernel/PRINCIPLES.md`, its evidence base in
 ## Anti-patterns
 
 - **Don't break the renderer–kernel coupling silently.** `assemble()` in
-  `src/main.rs` locates its splice points by plain string match —
+  `src/bundle.rs` locates its splice points by plain string match —
   `<article>`, `</article>`, `<title>`, and the `theme.css` `<link>` —
   in *both* shells it renders into: `kernel/demo.html` (writeups) and
   `kernel/index-shell.html` (the home page). Alter, remove, or duplicate

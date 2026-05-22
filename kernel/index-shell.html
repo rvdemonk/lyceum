@@ -225,6 +225,17 @@
     }
     a.row.visited .col-title { color: var(--text-head); }
 
+    /* A local_only writeup sits in this local catalogue but is held
+       back from any synced copy. A faint marker says so — quiet, since
+       most writeups carry it implicitly by absence. */
+    .local-tag {
+      margin-left: 9px;
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+    }
+
 
     /* ------------------------------------------------------------
        PHONE — no hover, so no peripheral reveal (Principle 2).

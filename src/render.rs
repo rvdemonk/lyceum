@@ -30,6 +30,7 @@ pub struct Document {
     pub collection: Option<String>,
     pub created: Option<String>,
     pub updated: Option<String>,
+    pub local_only: bool,
     pub article_html: String,
 }
 
@@ -71,6 +72,7 @@ pub fn render_document(input: &str) -> Result<Document, String> {
         collection: fm.collection.clone(),
         created: fm.created.clone(),
         updated: fm.updated.clone(),
+        local_only: fm.local_only,
         article_html: article,
     })
 }

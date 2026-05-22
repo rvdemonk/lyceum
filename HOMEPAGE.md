@@ -53,10 +53,13 @@ Four functions:
 - **Search.** A tag/title filter, staged: (a) a cheap client-side filter over already-rendered rows — viable soon, no database; (b) regex / semantic search over a SQLite metadata index with vectors, when library size warrants it. That size is the trigger LYCEUM.md reserves for adopting SQLite.
 - **A recency affordance.** Flowing from the re-entry function: a marker or strip for the most recently added or updated writeups, across all collections.
 
-## Pinning & serving
+## Pinning & serving — built
 
-- **Favicon** — a self-contained page can carry one as an inline `data:` SVG in `<head>`; no server needed. Worth doing soon, so a pinned tab has identity.
-- **Serving.** `file://` works but gives no hot reload, and `file://` links are blocked from an `http://`-served page — so any server must also serve the writeups, routing the registry's scattered paths. The proper answer is not vite but a built-in **`lyceum serve`** (already in the LYCEUM.md CLI sketch): serve `~/lyceum/`, route writeup pages from the registry, watch and live-reload. A real but bounded future build. For now: `file://` + manual refresh.
+*Updated 2026-05-21.*
+
+- **Favicon** — done. The lambda mark rides in `<head>` as an inline `data:` SVG; a pinned tab has identity, no server needed.
+- **Serving** — done. The `file://` problem the earlier draft worried over — `file://` links blocked from an `http://` page, scattered registry paths — *dissolved* once `~/lyceum/` became a self-contained **bundle**: `index.html` plus `w/<slug>.html`, all relative links. The same directory now works opened directly, served, or synced, with no routing layer. `lyceum serve` is a local http server with live-reload, watching the kernel and every writeup source.
+- **Hosting** is a separate, decoupled concern. `lyceum sync` rsyncs the bundle to a host, which serves it as plain static files behind a gate — no lyceum process runs there. A `local_only` front-matter flag keeps a writeup in the local bundle but out of every synced copy. See `README.md` and `LYCEUM.md`.
 
 ## Open questions
 

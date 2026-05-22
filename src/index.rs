@@ -13,8 +13,9 @@
 //! HTML — all presentation (the rail, the columns, the pinned theme)
 //! lives in the index shell.
 //!
-//! Open `~/lyceum/index.html` as a browser tab; re-render any writeup (or
-//! run `lyceum index`) to refresh it.
+//! Links are relative (`w/<slug>.html`) so the bundle is self-contained:
+//! the same `index.html` works opened directly, served by `lyceum serve`,
+//! or rsync'd to a host.
 
 use crate::registry::Entry;
 use crate::render::html_escape;
@@ -125,24 +126,32 @@ fn summary(entries: &[Entry], groups: &[(String, Vec<&Entry>)]) -> String {
 
 /// One writeup as a catalogue row: an `<a>` grid of
 /// title | description | tags | date. Every column span is emitted even
-/// when empty, so the columns stay aligned down the collection.
-/// `data-id` is the stable key the shell's "you were here" ribbon
-/// remembers in localStorage.
+/// when empty, so the columns stay aligned down the collection. `href`
+/// is relative (`w/<slug>.html`) and `data-id` (the slug) is the stable
+/// key the shell's "you were here" ribbon remembers in localStorage. A
+/// `local_only` writeup carries a faint marker — it is in this local
+/// catalogue but not on any synced copy.
 fn entry_html(e: &Entry) -> String {
     let date = e.created.as_deref().unwrap_or("");
     let sub = e.subtitle.as_deref().unwrap_or("");
     let tags = e.tags.join(" \u{00b7} ");
 
+    let title = if e.local_only {
+        format!(
+            "{}<span class=\"local-tag\">local</span>",
+            html_escape(&e.title)
+        )
+    } else {
+        html_escape(&e.title)
+    };
+
     let mut s = String::new();
     s.push_str(&format!(
-        "    <a class=\"row\" href=\"{}\" data-id=\"{}\">\n",
-        html_escape(&file_url(&e.output)),
-        html_escape(&e.output),
+        "    <a class=\"row\" href=\"w/{}.html\" data-id=\"{}\">\n",
+        html_escape(&e.slug),
+        html_escape(&e.slug),
     ));
-    s.push_str(&format!(
-        "      <span class=\"col-title\">{}</span>\n",
-        html_escape(&e.title),
-    ));
+    s.push_str(&format!("      <span class=\"col-title\">{title}</span>\n"));
     s.push_str(&format!(
         "      <span class=\"col-sub\">{}</span>\n",
         html_escape(sub),
@@ -157,15 +166,4 @@ fn entry_html(e: &Entry) -> String {
     ));
     s.push_str("    </a>\n");
     s
-}
-
-/// Turn an absolute filesystem path into a `file://` URL. Spaces are the
-/// one character common enough in paths to be worth encoding.
-fn file_url(path: &str) -> String {
-    let encoded = path.replace(' ', "%20");
-    if encoded.starts_with('/') {
-        format!("file://{encoded}")
-    } else {
-        encoded
-    }
 }

@@ -32,12 +32,37 @@ lyceum index                      # regenerate the home page from the registry
 lyceum build                      # re-render every registered writeup into a clean bundle
 lyceum serve                      # serve the bundle locally with live-reload
 lyceum sync                       # rsync the bundle (minus local_only writeups) to a host
+lyceum ls                         # list registered writeups
+lyceum read <slug>                # print a writeup's source MD (or HTML with --rendered)
+lyceum grep <pattern>             # case-insensitive substring search across sources
 ```
 
 `render` accepts `--shell <path>` for a non-default monodoc shell.
 `serve` accepts `--port` and `--host` (use `--host 0.0.0.0` to reach it
 from a phone on the same network). `sync` accepts `--target` and
-`--dry-run`.
+`--dry-run`. `ls` and `grep` both accept `--collection` and `--tag`
+filters; `ls` also takes `--long` and `--json`.
+
+## Reading the library
+
+`ls`, `read`, and `grep` are the **read access** to the library — what
+the renderer writes, these verbs read back. They exist so Claude (or
+any shell) can ask the library *what is in it* without crawling the
+project directories the source `.md` files live in: the slug is the
+indirection, the registry resolves it to a path.
+
+`read` returns the source Markdown by default, not the rendered HTML.
+The MD is denser and free of the kernel's instrument scaffolding — the
+right level for re-reading what's already in the library. `--rendered`
+is reserved for the rare case where the HTML *is* what's wanted
+(debugging the renderer, auditing how a primitive output).
+
+```
+lyceum ls --tag growth --long             # all growth writeups, full metadata
+lyceum read the-disclosure-tax            # the source MD
+lyceum grep "creator-founder"             # where has this phrase appeared before
+lyceum grep endo --collection "Growth Strategy"
+```
 
 The renderer reads the monodoc HTML shell (the bundled `kernel/demo.html`
 for writeups, `kernel/index-shell.html` for the home page), inlines
@@ -129,6 +154,7 @@ The repository holds two halves:
 | `src/index.rs` | Home-page generation from the registry |
 | `src/serve.rs` | Local dev server — http + live-reload + file-watch |
 | `src/sync.rs` | Filtered staging build + rsync to a host |
+| `src/library.rs` | Read access — `ls`, `read`, `grep` over the registry |
 
 The renderer stays thin on purpose. The "vanilla MD + HTML escape
 hatches" contract means most typographic primitives are just raw HTML the

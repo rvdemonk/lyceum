@@ -13,6 +13,7 @@
 mod bundle;
 mod frontmatter;
 mod index;
+mod library;
 mod registry;
 mod render;
 mod serve;
@@ -61,6 +62,40 @@ enum Command {
         #[arg(long)]
         dry_run: bool,
     },
+    /// List registered writeups.
+    Ls {
+        /// Filter to one collection.
+        #[arg(long)]
+        collection: Option<String>,
+        /// Filter to writeups carrying this tag.
+        #[arg(long)]
+        tag: Option<String>,
+        /// Verbose: one stanza per writeup with all metadata.
+        #[arg(long)]
+        long: bool,
+        /// Emit the filtered slice as JSON.
+        #[arg(long)]
+        json: bool,
+    },
+    /// Print a writeup's source Markdown (or rendered HTML with --rendered).
+    Read {
+        /// Writeup slug, as shown by `lyceum ls`.
+        slug: String,
+        /// Read the rendered HTML from the bundle instead of the source MD.
+        #[arg(long)]
+        rendered: bool,
+    },
+    /// Case-insensitive substring search across registered source files.
+    Grep {
+        /// Pattern to search for.
+        pattern: String,
+        /// Limit search to one collection.
+        #[arg(long)]
+        collection: Option<String>,
+        /// Limit search to writeups carrying this tag.
+        #[arg(long)]
+        tag: Option<String>,
+    },
 }
 
 fn main() -> ExitCode {
@@ -82,6 +117,23 @@ fn main() -> ExitCode {
         }),
         Command::Serve { port, host } => serve::serve(&host, port).map(|()| String::new()),
         Command::Sync { target, dry_run } => sync::sync(target, dry_run),
+        Command::Ls {
+            collection,
+            tag,
+            long,
+            json,
+        } => library::ls(library::LsOptions {
+            collection,
+            tag,
+            long,
+            json,
+        }),
+        Command::Read { slug, rendered } => library::read(&slug, rendered),
+        Command::Grep {
+            pattern,
+            collection,
+            tag,
+        } => library::grep(&pattern, library::GrepOptions { collection, tag }),
     };
 
     match result {
